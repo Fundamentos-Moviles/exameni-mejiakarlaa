@@ -30,6 +30,9 @@ class _MemoramaPageState extends State<MemoramaPage> {
   late List<bool> _descubiertas;
   List<int> _seleccionadas = [];
 
+  int _rows = 5;
+  int _cols = 4;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +52,11 @@ class _MemoramaPageState extends State<MemoramaPage> {
       Colors.pink,
       Colors.teal,
     ];
-    _colores = [...base, ...base]..shuffle();
+
+    final total = _rows * _cols;
+    final lista = [...base, ...base]..shuffle();
+
+    _colores = lista.take(total).toList();
     _descubiertas = List.generate(_colores.length, (_) => false);
     _seleccionadas.clear();
     setState(() {});
@@ -64,7 +71,6 @@ class _MemoramaPageState extends State<MemoramaPage> {
 
     if (_seleccionadas.length == 2) {
       if (_colores[_seleccionadas[0]] == _colores[_seleccionadas[1]]) {
-        // par correcto
         setState(() {
           _descubiertas[_seleccionadas[0]] = true;
           _descubiertas[_seleccionadas[1]] = true;
@@ -72,7 +78,6 @@ class _MemoramaPageState extends State<MemoramaPage> {
         });
         _verificarFin();
       } else {
-        // incorrecto → esconder de nuevo después de 800ms
         Timer(const Duration(milliseconds: 800), () {
           setState(() {
             _seleccionadas.clear();
@@ -106,35 +111,71 @@ class _MemoramaPageState extends State<MemoramaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Memorama - Karla Mejía"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _iniciarJuego,
-          )
-        ],
+        title: const Text("Memorama - Karla Dayana Mejía Padron"),
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4, // 5x4 o 4x5
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-        ),
-        itemCount: _colores.length,
-        itemBuilder: (context, index) {
-          final revelada =
-              _descubiertas[index] || _seleccionadas.contains(index);
-          return GestureDetector(
-            onTap: () => _tocarCarta(index),
-            child: Container(
-              decoration: BoxDecoration(
-                color: revelada ? _colores[index] : Colors.grey,
-                borderRadius: BorderRadius.circular(8),
-              ),
+      body: Column(
+        children: [
+          // Selector de tamaño
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButton<String>(
+              value: "${_rows}x$_cols",
+              items: const [
+                DropdownMenuItem(value: "5x4", child: Text("5 x 4")),
+                DropdownMenuItem(value: "4x6", child: Text("4 x 6")),
+                DropdownMenuItem(value: "5x8", child: Text("5 x 8")),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  final parts = value.split("x");
+                  _rows = int.parse(parts[0]);
+                  _cols = int.parse(parts[1]);
+                  _iniciarJuego();
+                }
+              },
             ),
-          );
-        },
+          ),
+
+          // Botón de reinicio
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.refresh),
+              label: const Text("Reiniciar"),
+              onPressed: _iniciarJuego,
+            ),
+          ),
+
+          // El tablero del memorama
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: _cols,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: _colores.length,
+              itemBuilder: (context, index) {
+                final revelada =
+                    _descubiertas[index] || _seleccionadas.contains(index);
+                return GestureDetector(
+                  onTap: () => _tocarCarta(index),
+                  child: SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: revelada ? _colores[index] : Colors.grey,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
